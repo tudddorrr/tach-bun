@@ -1,0 +1,16 @@
+{
+  "name": "tach",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "bun-types": "^0.5.0"
+  },
+  "dependencies": {
+    "hono": "^3.1.5",
+    "mysql2": "^3.2.0",
+    "openai": "^3.2.1"
+  },
+  "scripts": {
+    "start": "bun --hot index.ts"
+  }
+}

@@ -1,0 +1,22 @@
+# Tach
+
+To install dependencies:
+
+```bash
+bun install
+```
+
+To run:
+
+```bash
+bun start
+```
+
+This project was created using `bun init` in bun v0.5.9. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+
+## To-do
+
+- Validation
+- Tests
+- Support other databases (PostgreSQL, MongoDB, etc)
+- Documentation
