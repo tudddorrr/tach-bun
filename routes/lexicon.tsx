@@ -33,10 +33,20 @@ lexicon.post('/scan', async (c) => {
 })
 
 lexicon.get('/', async (c) => {
+  const { columns, tables } = c.req.queries()
+  let sql = 'select * from lexicon_columns'
+
+  const filters = (columns ?? []).map((column) => ['column_name', column])
+    .concat((tables ?? []).map((table) => ['table_name', table]))
+
+  if (filters.length > 0) {
+    sql += ' where ' + filters.map((filter, idx) => `${filter[0]} = ?${idx + 1}`).join(' or ')
+  }
+
   return c.html(
     <Results
       columns={['table_name', 'column_name', 'description']}
-      data={c.get('sqlite').query('select * from lexicon_columns').all()}
+      data={c.get('sqlite').query(sql).all(...filters.map((filter) => filter[1]))}
     />
   )
 })
