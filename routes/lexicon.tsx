@@ -1,6 +1,8 @@
 import { RowDataPacket } from 'mysql2'
 import createApp from '../lib/createApp'
 import Results from '../components/Results'
+import { zValidator } from '@hono/zod-validator'
+import { z } from 'zod'
 
 type ShowTableRow = RowDataPacket & {
   [key: string]: string
@@ -39,30 +41,39 @@ lexicon.get('/', async (c) => {
   )
 })
 
-lexicon.post('/:tableName', async (c) => {
-  const { tableName } = c.req.param()
-  const { description } = await c.req.json()
-
-  c.get('sqlite')
-    .query('replace into lexicon_tables (table_name, description) values (?1, ?2)')
-    .run(tableName, description)
-
-  return c.json({})
+const jsonSchema = z.object({
+  description: z.string()
 })
 
-lexicon.post('/:tableName/:columnName', async (c) => {
-  const { tableName, columnName } = c.req.param()
-  const { description } = await c.req.json()
+lexicon.post('/:tableName',
+  zValidator('json', jsonSchema),
+  async (c) => {
+    const { tableName } = c.req.param()
+    const { description } = await c.req.json<z.infer<typeof jsonSchema>>()
 
-  c.get('sqlite')
-    .query('replace into lexicon_tables (table_name) values (?)')
-    .run(tableName)
+    c.get('sqlite')
+      .query('replace into lexicon_tables (table_name, description) values (?1, ?2)')
+      .run(tableName, description)
 
-  c.get('sqlite')
-    .query('replace into lexicon_columns (table_name, column_name, description) values (?1, ?2, ?3)')
-    .run(tableName, columnName, description)
+    return c.json({})
+  })
 
-  return c.json({})
-})
+  lexicon.post('/:tableName/:columnName',
+    zValidator('json', jsonSchema),
+    async (c) => {
+      const { tableName, columnName } = c.req.param()
+      const { description } = await c.req.json<z.infer<typeof jsonSchema>>()
+
+      c.get('sqlite')
+        .query('replace into lexicon_tables (table_name) values (?)')
+        .run(tableName)
+
+      c.get('sqlite')
+        .query('replace into lexicon_columns (table_name, column_name, description) values (?1, ?2, ?3)')
+        .run(tableName, columnName, description)
+
+      return c.json({})
+    }
+)
 
 export default lexicon
