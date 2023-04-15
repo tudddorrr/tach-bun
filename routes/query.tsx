@@ -3,11 +3,15 @@ import getQueryFromPrompt from '../lib/openai/getQueryFromPrompt'
 import Results from '../components/Results'
 import { RowDataPacket } from 'mysql2/promise'
 import createApp from '../lib/createApp'
-import { BlocklistItem } from '../types/BlocklistItem'
+import { BlocklistItem } from '../types/models/BlocklistItem'
 import buildBlocklistText from '../lib/buildBlocklistText'
-import { OpenAILog } from '../types/OpenAILog'
+import { OpenAILog } from '../types/models/OpenAILog'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
+
+type QueryRow = RowDataPacket & {
+  [key: string]: any
+}
 
 const query = createApp()
 
@@ -50,7 +54,7 @@ query.post(
     let sql = ''
 
     const existingLogs = checkCache
-      ? c.get('sqlite').query('select * from openai_logs where tables = ?1 and prompt = ?2 order by id desc').all(tables.join(), prompt) as OpenAILog[]
+      ? c.get('sqlite').query<OpenAILog, [string, string]>('select * from openai_logs where tables = ?1 and prompt = ?2 order by id desc').all(tables.join(), prompt)
       : []
 
     const useCache = existingLogs.length > 0
@@ -59,7 +63,7 @@ query.post(
     if (useCache) {
       sql = existingLogs[0].query
     } else {
-      const blocklist = c.get('sqlite').query('select table_name, column_name from blocklist_items').all() as BlocklistItem[]
+      const blocklist = c.get('sqlite').query<BlocklistItem, []>('select table_name, column_name from blocklist_items').all()
       const createTableSyntaxes = await getPromptTables(c.get('db'), tables, blocklist)
       const blocklistText = buildBlocklistText(blocklist)
       const res = await getQueryFromPrompt(createTableSyntaxes, prompt, blocklistText)
@@ -81,7 +85,7 @@ query.post(
     })
 
     try {
-      const [rows, fields] = await c.get('db').execute(sql)
+      const [rows, fields] = await c.get('db').execute<QueryRow[]>(sql)
       c.set('openAILogData', { ...c.get('openAILogData'), success: true })
 
       const wantsJson = c.req.header('Accept') === 'application/json'
@@ -95,14 +99,14 @@ query.post(
       const wantsCSV = c.req.header('Accept') === 'text/csv'
       if (wantsCSV) {
         const header = fields.map((field) => field.name).join() + '\n'
-        const body = (rows as RowDataPacket[]).map((row) => Object.values(row).join()).join('\n')
+        const body = rows.map((row) => Object.values(row).join()).join('\n')
         return c.text(header + body)
       }
 
       return c.html(
         <Results
           columns={fields.map((field) => field.name)}
-          data={rows as RowDataPacket[]}
+          data={rows}
         />
       )
     } catch (err) {

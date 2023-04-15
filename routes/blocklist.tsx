@@ -3,14 +3,15 @@ import Results from '../components/Results'
 import createApp from '../lib/createApp'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
+import { BlocklistItem } from '../types/models/BlocklistItem'
 
 const blocklist = createApp()
 
 blocklist.get('/', async (c) => {
   return c.html(
-    <Results
+    <Results<BlocklistItem>
       columns={['table_name', 'column_name']}
-      data={c.get('sqlite').query('select * from blocklist_items').all()}
+      data={c.get('sqlite').query<Record<string, BlocklistItem>, []>('select * from blocklist_items').all()}
     />
   )
 })

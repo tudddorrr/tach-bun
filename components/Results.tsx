@@ -1,11 +1,11 @@
 import Layout from './Layout'
 
-type ResultsProps = {
-  columns: string[]
-  data: any[]
+type ResultsProps<T> = {
+  columns: (Extract<keyof T, string>)[]
+  data: Record<string, T>[]
 }
 
-export default function Results({ columns, data }: ResultsProps) {
+export default function Results<T>({ columns, data }: ResultsProps<T>) {
   return (
     <Layout>
       <table>

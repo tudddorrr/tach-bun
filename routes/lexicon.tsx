@@ -3,6 +3,7 @@ import createApp from '../lib/createApp'
 import Results from '../components/Results'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
+import { LexiconColumn } from '../types/models/LexiconColumn'
 
 type ShowTableRow = RowDataPacket & {
   [key: string]: string
@@ -44,9 +45,9 @@ lexicon.get('/', async (c) => {
   }
 
   return c.html(
-    <Results
+    <Results<LexiconColumn>
       columns={['table_name', 'column_name', 'description']}
-      data={c.get('sqlite').query(sql).all(...filters.map((filter) => filter[1]))}
+      data={c.get('sqlite').query<Record<string, LexiconColumn>, string[]>(sql).all(...filters.map((filter) => filter[1]))}
     />
   )
 })
