@@ -32,8 +32,14 @@ blocklist.post('/',
     }
 
     c.get('sqlite')
-      .query('replace into blocklist_items (table_name, column_name) values (?1, ?2)')
+      .query('insert into blocklist_items (table_name, column_name) values (?1, ?2) on conflict do nothing')
       .run(tableName, columnName)
+
+    if (columnName === '*') {
+      c.get('sqlite')
+        .query('delete from blocklist_items where table_name = ?1 and column_name != ?2')
+        .run(tableName, columnName)
+    }
 
     return c.json({})
   }
